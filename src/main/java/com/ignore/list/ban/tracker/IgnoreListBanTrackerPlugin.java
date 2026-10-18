@@ -1,11 +1,17 @@
 package com.ignore.list.ban.tracker;
 
+import com.google.inject.Provides;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Ignore;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.Notifier;
@@ -32,9 +38,11 @@ public class IgnoreListBanTrackerPlugin extends Plugin
 	@Inject private ColorPickerManager colorPickerManager;
 	@Inject private Notifier notifier;
 	@Inject private ChatMessageManager chatMessageManager;
+	@Inject private IgnoreListBanTrackerConfig config;
 
 	private static final String CONFIG_GROUP = "ignoreListBanTracker";
 	private static final String CONFIG_KEY = "lastIgnoreListSize";
+	private static final String NAMES_KEY = "lastIgnoreListNames";
 
 	private int checkIgnoreListCountdown;
 	private boolean hasSeenLoginScreenSinceLastCheck;
@@ -45,6 +53,12 @@ public class IgnoreListBanTrackerPlugin extends Plugin
 		checkIgnoreListCountdown = -1;
 		hasSeenLoginScreenSinceLastCheck = client.getGameState() == GameState.LOGIN_SCREEN;
 		System.out.println(client.getGameState());
+	}
+
+	@Provides
+	IgnoreListBanTrackerConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(IgnoreListBanTrackerConfig.class);
 	}
 
 	// Returns true if and only if the setting is enabled to remove banned players
@@ -78,8 +92,12 @@ public class IgnoreListBanTrackerPlugin extends Plugin
 					} else {
 						actionString = "removed";
 					}
-					final String message = String.format("%d %s from your ignore list %s been %s.", sizeChange, sizeChange == 1 ? "user" : "users", sizeChange == 1 ? "has" : "have", actionString);
-					sendMessage(message);
+					String message = String.format("%d %s from your ignore list %s been %s", sizeChange, sizeChange == 1 ? "user" : "users", sizeChange == 1 ? "has" : "have", actionString);
+					String removedNames = config.showRemovedNames() ? getRemovedNames() : null;
+					if(removedNames != null) {
+						message += ": " + removedNames;
+					}
+					sendMessage(message + ".");
 				}
 			}
 		}
@@ -89,6 +107,34 @@ public class IgnoreListBanTrackerPlugin extends Plugin
 		if(checkIgnoreListCountdown == -1 && (lastIgnoreCount == null || lastIgnoreCount != ignoreCount)) {
 			configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY, ignoreCount);
 		}
+		if(checkIgnoreListCountdown == -1) {
+			if(config.showRemovedNames()) {
+				String names = Arrays.stream(client.getIgnoreContainer().getMembers())
+					.map(Ignore::getName)
+					.collect(Collectors.joining(","));
+				configManager.setRSProfileConfiguration(CONFIG_GROUP, NAMES_KEY, names);
+			} else {
+				configManager.unsetRSProfileConfiguration(CONFIG_GROUP, NAMES_KEY);
+			}
+		}
+	}
+
+	// Returns the names that were saved at the last check but are no longer on the ignore list
+	private String getRemovedNames() {
+		String lastNames = configManager.getRSProfileConfiguration(CONFIG_GROUP, NAMES_KEY);
+		if(lastNames == null) {
+			return null;
+		}
+		Set<String> currentNames = new HashSet<>();
+		for(Ignore ignore : client.getIgnoreContainer().getMembers()) {
+			currentNames.add(ignore.getName());
+			// Users who changed their name are still on the list
+			currentNames.add(ignore.getPrevName());
+		}
+		String removedNames = Arrays.stream(lastNames.split(","))
+			.filter(name -> !currentNames.contains(name))
+			.collect(Collectors.joining(", "));
+		return removedNames.isEmpty() ? null : removedNames;
 	}
 
 	@Subscribe
