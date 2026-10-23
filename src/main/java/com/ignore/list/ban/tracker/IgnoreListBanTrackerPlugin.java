@@ -110,13 +110,18 @@ public class IgnoreListBanTrackerPlugin extends Plugin
 		if(checkIgnoreListCountdown == -1) {
 			if(config.showRemovedNames()) {
 				String names = Arrays.stream(client.getIgnoreContainer().getMembers())
-					.map(Ignore::getName)
+					.map(ignore -> normalizeName(ignore.getName()))
 					.collect(Collectors.joining(","));
 				configManager.setRSProfileConfiguration(CONFIG_GROUP, NAMES_KEY, names);
 			} else {
 				configManager.unsetRSProfileConfiguration(CONFIG_GROUP, NAMES_KEY);
 			}
 		}
+	}
+
+	// Names may use non-breaking spaces instead of regular ones, so normalize before saving/comparing
+	private static String normalizeName(String name) {
+		return name == null ? null : name.replace('\u00A0', ' ').trim();
 	}
 
 	// Returns the names that were saved at the last check but are no longer on the ignore list
@@ -127,11 +132,12 @@ public class IgnoreListBanTrackerPlugin extends Plugin
 		}
 		Set<String> currentNames = new HashSet<>();
 		for(Ignore ignore : client.getIgnoreContainer().getMembers()) {
-			currentNames.add(ignore.getName());
+			currentNames.add(normalizeName(ignore.getName()));
 			// Users who changed their name are still on the list
-			currentNames.add(ignore.getPrevName());
+			currentNames.add(normalizeName(ignore.getPrevName()));
 		}
 		String removedNames = Arrays.stream(lastNames.split(","))
+			.map(IgnoreListBanTrackerPlugin::normalizeName)
 			.filter(name -> !currentNames.contains(name))
 			.collect(Collectors.joining(", "));
 		return removedNames.isEmpty() ? null : removedNames;
