@@ -15,10 +15,11 @@ So, simply report badly behaving users, and ensure you add them to your ignore l
 
 # Testing
 
-* Run plugin once and close the client
+* Run plugin once with lastIgnoreListNames settings enabled and close the client
 * Find your profile at `~/.runelite/profiles2/<profile>.properties`
-* Edit `ignoreListBanTracker.rsprofile...=X` and increase the number
-* Run the client and log in; check if the reported number matches the increase
+* Edit `ignoreListBanTracker.rsprofile...lastIgnoreListSize=X` and increase the number
+* Edit `ignoreListBanTracker.rsprofile...lastIgnoreListNames=X` and add some new comma separated entries
+* Run the client and log in; check if the reported number matches the increase, and the added names are printed
 
 # Image Sources
 
