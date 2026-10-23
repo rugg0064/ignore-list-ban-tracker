@@ -52,7 +52,6 @@ public class IgnoreListBanTrackerPlugin extends Plugin
 	{
 		checkIgnoreListCountdown = -1;
 		hasSeenLoginScreenSinceLastCheck = client.getGameState() == GameState.LOGIN_SCREEN;
-		System.out.println(client.getGameState());
 	}
 
 	@Provides
