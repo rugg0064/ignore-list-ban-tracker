@@ -13,6 +13,13 @@ From here on, every time you log in, if any accounts have been automatically rem
 
 So, simply report badly behaving users, and ensure you add them to your ignore list, and see the bans flow in!
 
+# Testing
+
+* Run plugin once and close the client
+* Find your profile at `~/.runelite/profiles2/<profile>.properties`
+* Edit `ignoreListBanTracker.rsprofile...=X` and increase the number
+* Run the client and log in; check if the reported number matches the increase
+
 # Image Sources
 
 - Icon was obtained through ingame screenshots

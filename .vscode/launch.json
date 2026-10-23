@@ -1,0 +1,14 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"name": "RuneLite (IgnoreListBanTrackerTest)",
+			"request": "launch",
+			"mainClass": "com.ignore.list.ban.tracker.IgnoreListBanTrackerTest",
+			"projectName": "ignore-list-ban-tracker",
+			"args": "--developer-mode",
+			"vmArgs": "-ea"
+		}
+	]
+}
